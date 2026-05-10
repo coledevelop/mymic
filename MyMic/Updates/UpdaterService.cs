@@ -1,4 +1,6 @@
 using System;
+using System.Net;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Velopack;
@@ -123,6 +125,15 @@ public sealed class UpdaterService
             ButtonEnabled = true;
             Notify();
         }
+        catch (Exception ex) when (IsNoReleasesYet(ex))
+        {
+            // No GitHub Release published yet (or none for this channel). Treat as up to date.
+            State = UpdaterState.UpToDate;
+            ButtonText = "Up to date";
+            ButtonEnabled = true;
+            StatusText = "";
+            Notify();
+        }
         catch (Exception ex)
         {
             State = UpdaterState.Failed;
@@ -135,6 +146,18 @@ public sealed class UpdaterService
         {
             _busy = false;
         }
+    }
+
+    private static bool IsNoReleasesYet(Exception ex)
+    {
+        for (var e = (Exception?)ex; e is not null; e = e.InnerException)
+        {
+            if (e is HttpRequestException http && http.StatusCode == HttpStatusCode.NotFound)
+                return true;
+            if (e.Message.Contains("404", StringComparison.Ordinal))
+                return true;
+        }
+        return false;
     }
 
     private void Notify() => Changed?.Invoke(this, EventArgs.Empty);
