@@ -39,7 +39,11 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            desktop.Exit += (_, _) => SafeUnmute();
         }
+
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => SafeUnmute();
+        AppDomain.CurrentDomain.UnhandledException += (_, _) => SafeUnmute();
 
         Settings = AppSettings.Load();
 
@@ -146,5 +150,10 @@ public partial class App : Application
         {
             desktop.Shutdown();
         }
+    }
+
+    private void SafeUnmute()
+    {
+        try { _mic?.SetMuted(false); } catch { /* swallow — we're shutting down */ }
     }
 }
