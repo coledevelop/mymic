@@ -6,8 +6,8 @@ public static class SoundService
 {
     // macOS built-in alert sounds — short, distinct, and respect the user's
     // alert volume in System Settings → Sound.
-    private const string MuteSound = "/System/Library/Sounds/Funk.aiff";
-    private const string UnmuteSound = "/System/Library/Sounds/Glass.aiff";
+    private const string MuteSound = "/System/Library/Sounds/Bottle.aiff";
+    private const string UnmuteSound = "/System/Library/Sounds/Funk.aiff";
 
     public static void PlayToggle(bool muted)
     {
