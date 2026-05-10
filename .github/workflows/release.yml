@@ -65,11 +65,23 @@ jobs:
             --channel ${{ matrix.channel }} \
             -y
 
-      - name: Upload artifact
+      - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyMic-${{ matrix.channel }}
-          path: Releases/*
+          name: MyMic-installer-${{ matrix.channel }}
+          path: Releases/*Setup.pkg
+          if-no-files-found: error
+
+      - name: Upload updater artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyMic-updater-${{ matrix.channel }}
+          path: |
+            Releases/*.nupkg
+            Releases/*Portable.zip
+            Releases/RELEASES-*
+            Releases/releases.*.json
+            Releases/assets.*.json
           if-no-files-found: error
 
   release:
