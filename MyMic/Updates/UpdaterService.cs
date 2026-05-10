@@ -64,7 +64,6 @@ public sealed class UpdaterService
         }
     }
 
-    /// <summary>Triggered by the Check/Restart button in the UI.</summary>
     public async Task TriggerAsync()
     {
         if (_manager is null || !_manager.IsInstalled) return;
@@ -87,7 +86,6 @@ public sealed class UpdaterService
         await CheckAndDownloadAsync();
     }
 
-    /// <summary>Background check + download. Safe to call at startup.</summary>
     public async Task CheckAndDownloadAsync()
     {
         if (_manager is null || !_manager.IsInstalled || _busy) return;
@@ -101,13 +99,28 @@ public sealed class UpdaterService
             StatusText = "";
             Notify();
 
-            var info = await _manager.CheckForUpdatesAsync();
+            UpdateInfo? info = null;
+            try
+            {
+                info = await _manager.CheckForUpdatesAsync();
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                // No GitHub Release published yet (or none for this channel).
+                info = null;
+            }
+            catch (Exception ex) when (ex.InnerException is HttpRequestException http
+                                       && http.StatusCode == HttpStatusCode.NotFound)
+            {
+                info = null;
+            }
+
             if (info is null)
             {
                 State = UpdaterState.UpToDate;
                 ButtonText = "Check for updates";
                 ButtonEnabled = true;
-                StatusText = "Up to date";
+                StatusText = $"Up to date (current: {SafeCurrentVersion()})";
                 Notify();
                 return;
             }
@@ -124,15 +137,7 @@ public sealed class UpdaterService
             State = UpdaterState.Ready;
             ButtonText = $"Restart to install v{version}";
             ButtonEnabled = true;
-            Notify();
-        }
-        catch (Exception ex) when (IsNoReleasesYet(ex))
-        {
-            // No GitHub Release published yet (or none for this channel). Treat as up to date.
-            State = UpdaterState.UpToDate;
-            ButtonText = "Check for updates";
-            ButtonEnabled = true;
-            StatusText = "Up to date";
+            StatusText = "";
             Notify();
         }
         catch (Exception ex)
@@ -140,7 +145,7 @@ public sealed class UpdaterService
             State = UpdaterState.Failed;
             ButtonText = "Check for updates";
             ButtonEnabled = true;
-            StatusText = $"Update check failed: {ex.Message}";
+            StatusText = $"{ex.GetType().Name}: {ex.Message}";
             Notify();
         }
         finally
@@ -149,16 +154,10 @@ public sealed class UpdaterService
         }
     }
 
-    private static bool IsNoReleasesYet(Exception ex)
+    private string SafeCurrentVersion()
     {
-        for (var e = (Exception?)ex; e is not null; e = e.InnerException)
-        {
-            if (e is HttpRequestException http && http.StatusCode == HttpStatusCode.NotFound)
-                return true;
-            if (e.Message.Contains("404", StringComparison.Ordinal))
-                return true;
-        }
-        return false;
+        try { return _manager?.CurrentVersion?.ToString() ?? "unknown"; }
+        catch { return "unknown"; }
     }
 
     private void Notify() => Changed?.Invoke(this, EventArgs.Empty);
