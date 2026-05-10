@@ -1,0 +1,15 @@
+<local:SecondaryWindow xmlns="https://github.com/avaloniaui"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:local="clr-namespace:MyMic"
+                       x:Class="MyMic.AboutWindow"
+                 Title="About MyMic"
+                 Width="560" Height="440"
+                 CanResize="False"
+                 WindowStartupLocation="CenterOwner">
+    <Grid>
+        <TextBlock HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Opacity="0.5"
+                   Text="About MyMic" />
+    </Grid>
+</local:SecondaryWindow>

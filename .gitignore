@@ -7,4 +7,6 @@ obj/
 .vscode/
 .DS_Store
 publish/
+dist/
+build/
 *.app/

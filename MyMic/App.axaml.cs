@@ -1,21 +1,24 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Avalonia.Platform;
-using Avalonia.Threading;
 using MyMic.Audio;
+using MyMic.macOS;
 
 namespace MyMic;
 
 public partial class App : Application
 {
+    private const int MuteMenuIndex = 0;
+
     private MicMuteService? _mic;
-    private TrayIcon? _trayIcon;
-    private NativeMenuItem? _toggleItem;
-    private WindowIcon? _iconOn;
-    private WindowIcon? _iconMuted;
+    private MacTrayIcon? _tray;
+    private MainWindow? _window;
+
+    public MicMuteService? Mic => _mic;
 
     public override void Initialize()
     {
@@ -24,7 +27,7 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        macOS.MacOSInterop.HideFromDock();
+        MacOSInterop.HideFromDock();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -32,54 +35,80 @@ public partial class App : Application
         }
 
         _mic = new MicMuteService();
-        _mic.MuteChanged += (_, muted) => Dispatcher.UIThread.Post(() => UpdateTrayState(muted));
+        _mic.MuteChanged += (_, muted) => UpdateTrayState(muted);
 
-        var icons = TrayIcon.GetIcons(this);
-        _trayIcon = icons is { Count: > 0 } ? icons[0] : null;
-        _toggleItem = _trayIcon?.Menu?.Items.Count > 0
-            ? _trayIcon.Menu.Items[0] as NativeMenuItem
-            : null;
+        _tray = new MacTrayIcon();
+        _tray.OnOptionClick = () => _mic?.Toggle();
 
-        _iconOn = LoadIcon("avares://MyMic/Assets/mic.png");
-        _iconMuted = LoadIcon("avares://MyMic/Assets/mic-muted.png");
+        var iconPath = ResolveAsset("mic.png");
+        if (iconPath is not null) _tray.SetImage(iconPath);
+        _tray.SetTooltip("MyMic — mic is on");
+
+        _tray.SetMenu(new[]
+        {
+            new TrayMenuItem { Title = "Mute microphone", Click = () => _mic?.Toggle() },
+            TrayMenuItem.Separator,
+            new TrayMenuItem { Title = "Open MyMic", Click = OpenWindow },
+            TrayMenuItem.Separator,
+            new TrayMenuItem { Title = "Quit MyMic", Click = QuitApp },
+        });
 
         UpdateTrayState(_mic.IsMuted);
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static WindowIcon? LoadIcon(string uri)
-    {
-        try
-        {
-            using var stream = AssetLoader.Open(new Uri(uri));
-            return new WindowIcon(stream);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     private void UpdateTrayState(bool muted)
     {
-        if (_trayIcon is not null)
-        {
-            var icon = muted ? _iconMuted : _iconOn;
-            if (icon is not null) _trayIcon.Icon = icon;
-            _trayIcon.ToolTipText = muted ? "MyMic — mic is muted" : "MyMic — mic is on";
-        }
-        if (_toggleItem is not null)
-        {
-            _toggleItem.Header = muted ? "Unmute microphone" : "Mute microphone";
-        }
+        if (_tray is null) return;
+        var asset = ResolveAsset(muted ? "mic-muted.png" : "mic.png");
+        if (asset is not null) _tray.SetImage(asset);
+        _tray.SetTooltip(muted ? "MyMic — mic is muted" : "MyMic — mic is on");
+        _tray.UpdateMenuItemTitle(MuteMenuIndex, muted ? "Unmute microphone" : "Mute microphone");
     }
 
-    private void OnToggleClicked(object? sender, EventArgs e) => _mic?.Toggle();
+    private static string? ResolveAsset(string fileName)
+    {
+        // In a packaged .app bundle, AppContext.BaseDirectory is Contents/MacOS;
+        // we publish Assets/* alongside via AvaloniaResource, but NSImage needs a
+        // real file path. Locate the PNG next to the executable.
+        var candidates = new List<string>
+        {
+            Path.Combine(AppContext.BaseDirectory, fileName),
+            Path.Combine(AppContext.BaseDirectory, "Assets", fileName),
+            Path.Combine(Path.GetDirectoryName(AppContext.BaseDirectory) ?? string.Empty, "Resources", fileName),
+        };
+        foreach (var path in candidates)
+        {
+            if (File.Exists(path)) return path;
+        }
+        return null;
+    }
 
-    private void OnTrayClicked(object? sender, EventArgs e) => _mic?.Toggle();
+    private void OpenWindow()
+    {
+        if (_window is null)
+        {
+            _window = new MainWindow();
+            _window.Closed += OnWindowClosed;
+        }
+        MacOSInterop.ShowInDock();
+        _window.Show();
+        _window.Activate();
+        MacOSInterop.ActivateApp();
+    }
 
-    private void OnQuitClicked(object? sender, EventArgs e)
+    private void OnWindowClosed(object? sender, EventArgs e)
+    {
+        if (_window is not null)
+        {
+            _window.Closed -= OnWindowClosed;
+            _window = null;
+        }
+        MacOSInterop.HideFromDock();
+    }
+
+    private void QuitApp()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
