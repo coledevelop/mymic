@@ -7,15 +7,15 @@
     <key>CFBundleDisplayName</key>
     <string>MyMic</string>
     <key>CFBundleIdentifier</key>
-    <string>com.colep.mymic</string>
+    <string>com.mymic.app</string>
     <key>CFBundleExecutable</key>
     <string>MyMic</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleVersion</key>
-    <string>0.1.9</string>
+    <string>0.1.10</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.9</string>
+    <string>0.1.10</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>
