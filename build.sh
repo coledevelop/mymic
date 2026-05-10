@@ -8,7 +8,7 @@ case "$ARCH" in
   *) echo "unknown arch: $ARCH (expected arm64 or x86_64)" >&2; exit 1 ;;
 esac
 
-VERSION="${VERSION:-0.1.3}"
+VERSION="${VERSION:-0.1.4}"
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 PROJ="$ROOT/MyMic/MyMic.csproj"

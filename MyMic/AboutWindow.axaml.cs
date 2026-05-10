@@ -13,6 +13,7 @@ public partial class AboutWindow : SecondaryWindow
     private UpdaterService? _updater;
     private Button? _updateButton;
     private TextBlock? _updateStatus;
+    private TextBlock? _updateCheckmark;
 
     public AboutWindow()
     {
@@ -26,6 +27,7 @@ public partial class AboutWindow : SecondaryWindow
 
         _updateButton = this.FindControl<Button>("UpdateButton");
         _updateStatus = this.FindControl<TextBlock>("UpdateStatus");
+        _updateCheckmark = this.FindControl<TextBlock>("UpdateCheckmark");
 
         if (Application.Current is App app)
         {
@@ -53,6 +55,10 @@ public partial class AboutWindow : SecondaryWindow
         if (_updateStatus is not null)
         {
             _updateStatus.Text = _updater.StatusText;
+        }
+        if (_updateCheckmark is not null)
+        {
+            _updateCheckmark.IsVisible = _updater.State == UpdaterState.UpToDate;
         }
     }
 

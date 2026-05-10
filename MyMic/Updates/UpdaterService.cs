@@ -105,8 +105,9 @@ public sealed class UpdaterService
             if (info is null)
             {
                 State = UpdaterState.UpToDate;
-                ButtonText = "Up to date";
+                ButtonText = "Check for updates";
                 ButtonEnabled = true;
+                StatusText = "Up to date";
                 Notify();
                 return;
             }
@@ -129,9 +130,9 @@ public sealed class UpdaterService
         {
             // No GitHub Release published yet (or none for this channel). Treat as up to date.
             State = UpdaterState.UpToDate;
-            ButtonText = "Up to date";
+            ButtonText = "Check for updates";
             ButtonEnabled = true;
-            StatusText = "";
+            StatusText = "Up to date";
             Notify();
         }
         catch (Exception ex)

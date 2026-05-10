@@ -26,13 +26,24 @@
                 HorizontalAlignment="Center"
                 Content="Check for updates" />
 
-        <TextBlock x:Name="UpdateStatus"
-                   FontSize="12"
-                   Opacity="0.55"
-                   TextWrapping="Wrap"
-                   MaxWidth="420"
-                   TextAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Text="" />
+        <StackPanel Orientation="Horizontal"
+                    Spacing="6"
+                    HorizontalAlignment="Center">
+            <TextBlock x:Name="UpdateCheckmark"
+                       Text="✓"
+                       Foreground="#22c55e"
+                       FontWeight="SemiBold"
+                       FontSize="13"
+                       VerticalAlignment="Center"
+                       IsVisible="False" />
+            <TextBlock x:Name="UpdateStatus"
+                       FontSize="12"
+                       Opacity="0.65"
+                       TextWrapping="Wrap"
+                       MaxWidth="420"
+                       TextAlignment="Center"
+                       VerticalAlignment="Center"
+                       Text="" />
+        </StackPanel>
     </StackPanel>
 </local:SecondaryWindow>
