@@ -9,7 +9,7 @@ on:
       version:
         description: "Version to build (without leading 'v')"
         required: true
-        default: "0.1.0"
+        default: "0.1.2"
 
 jobs:
   build:
@@ -20,7 +20,11 @@ jobs:
 
     strategy:
       matrix:
-        arch: [arm64, x86_64]
+        include:
+          - arch: arm64
+            channel: osx-arm64
+          - arch: x86_64
+            channel: osx-x64
 
     steps:
       - uses: actions/checkout@v4
@@ -44,16 +48,28 @@ jobs:
           VERSION: ${{ steps.version.outputs.value }}
         run: ./build.sh ${{ matrix.arch }}
 
-      - name: Package DMG
+      - name: Install Velopack tool
+        run: dotnet tool install --global vpk
+
+      - name: Pack with Velopack
         env:
           VERSION: ${{ steps.version.outputs.value }}
-        run: ./package-dmg.sh ${{ matrix.arch }}
+        run: |
+          vpk pack \
+            --packId MyMic \
+            --packTitle "MyMic" \
+            --packVersion "$VERSION" \
+            --packDir dist/MyMic.app \
+            --mainExe MyMic \
+            --icon MyMic/macOS/AppIcon.icns \
+            --channel ${{ matrix.channel }} \
+            -y
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyMic-${{ matrix.arch }}
-          path: dist/MyMic-*.dmg
+          name: MyMic-${{ matrix.channel }}
+          path: Releases/*
           if-no-files-found: error
 
   release:
@@ -76,7 +92,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*.dmg
+          files: artifacts/*
           generate_release_notes: true
           draft: false
           prerelease: false

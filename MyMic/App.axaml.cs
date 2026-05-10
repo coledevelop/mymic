@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using MyMic.Audio;
 using MyMic.macOS;
 using MyMic.Settings;
+using MyMic.Updates;
 
 namespace MyMic;
 
@@ -20,9 +21,11 @@ public partial class App : Application
     private MacTrayIcon? _tray;
     private GlobalHotkey? _hotkey;
     private MainWindow? _window;
+    private UpdaterService? _updater;
 
     public MicMuteService? Mic => _mic;
     public AppSettings Settings { get; private set; } = new();
+    public UpdaterService? Updater => _updater;
 
     public override void Initialize()
     {
@@ -61,6 +64,10 @@ public partial class App : Application
 
         _hotkey = new GlobalHotkey { Pressed = () => Dispatcher.UIThread.Post(() => _mic?.Toggle()) };
         ApplyHotkeyFromSettings();
+
+        _updater = new UpdaterService();
+        // Kick off a background check + download — no UI blocking, no failure if offline.
+        _ = _updater.CheckAndDownloadAsync();
 
         UpdateTrayState(_mic.IsMuted);
 

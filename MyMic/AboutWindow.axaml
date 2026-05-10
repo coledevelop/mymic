@@ -8,7 +8,7 @@
                        WindowStartupLocation="CenterOwner">
     <StackPanel HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Spacing="12">
+                Spacing="16">
         <TextBlock Text="MyMic"
                    FontSize="32"
                    FontWeight="SemiBold"
@@ -17,5 +17,22 @@
                    FontSize="14"
                    Opacity="0.6"
                    HorizontalAlignment="Center" />
+
+        <Button x:Name="UpdateButton"
+                Click="OnUpdateClick"
+                MinWidth="240"
+                Padding="16,10"
+                HorizontalContentAlignment="Center"
+                HorizontalAlignment="Center"
+                Content="Check for updates" />
+
+        <TextBlock x:Name="UpdateStatus"
+                   FontSize="12"
+                   Opacity="0.55"
+                   TextWrapping="Wrap"
+                   MaxWidth="420"
+                   TextAlignment="Center"
+                   HorizontalAlignment="Center"
+                   Text="" />
     </StackPanel>
 </local:SecondaryWindow>

@@ -9,4 +9,5 @@ obj/
 publish/
 dist/
 build/
+Releases/
 *.app/
