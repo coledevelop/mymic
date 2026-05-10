@@ -49,6 +49,7 @@ public partial class App : Application
 
         _mic = new MicMuteService();
         _mic.MuteChanged += (_, muted) => Dispatcher.UIThread.Post(() => UpdateTrayState(muted));
+        _mic.MuteChanged += (_, muted) => SoundService.PlayToggle(muted);
 
         _tray = new MacTrayIcon();
         _tray.OnOptionClick = () => _mic?.Toggle();
