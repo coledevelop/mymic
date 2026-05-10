@@ -8,14 +8,16 @@ case "$ARCH" in
   *) echo "unknown arch: $ARCH (expected arm64 or x86_64)" >&2; exit 1 ;;
 esac
 
+VERSION="${VERSION:-0.1.0}"
+
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 PROJ="$ROOT/MyMic/MyMic.csproj"
 PUB="$ROOT/build/publish-$RID"
 APP="$ROOT/dist/MyMic.app"
-INFO="$ROOT/MyMic/macOS/Info.plist"
+INFO_SRC="$ROOT/MyMic/macOS/Info.plist"
 ICON="$ROOT/MyMic/macOS/AppIcon.icns"
 
-echo "==> publishing for $RID"
+echo "==> publishing for $RID (version $VERSION)"
 rm -rf "$PUB" "$APP"
 mkdir -p "$ROOT/dist"
 
@@ -26,12 +28,18 @@ dotnet publish "$PROJ" \
   -p:PublishSingleFile=false \
   -p:DebugType=none \
   -p:DebugSymbols=false \
+  -p:Version="$VERSION" \
   -o "$PUB" \
   >/dev/null
 
 echo "==> assembling $APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$INFO" "$APP/Contents/Info.plist"
+
+# Copy Info.plist and stamp version
+cp "$INFO_SRC" "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
+
 cp "$ICON" "$APP/Contents/Resources/AppIcon.icns"
 cp -R "$PUB"/. "$APP/Contents/MacOS/"
 
@@ -41,5 +49,5 @@ echo "==> ad-hoc codesigning"
 codesign --force --deep --sign - "$APP" 2>/dev/null
 
 echo
-echo "built: $APP"
+echo "built: $APP (v$VERSION)"
 echo "run:   open '$APP'   (or double-click in Finder)"
