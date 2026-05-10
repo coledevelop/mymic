@@ -74,6 +74,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload updater artifact
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
           name: MyMic-updater-${{ matrix.channel }}
