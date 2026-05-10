@@ -5,8 +5,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using MyMic.Audio;
 using MyMic.macOS;
+using MyMic.Settings;
 
 namespace MyMic;
 
@@ -16,9 +18,11 @@ public partial class App : Application
 
     private MicMuteService? _mic;
     private MacTrayIcon? _tray;
+    private GlobalHotkey? _hotkey;
     private MainWindow? _window;
 
     public MicMuteService? Mic => _mic;
+    public AppSettings Settings { get; private set; } = new();
 
     public override void Initialize()
     {
@@ -34,8 +38,10 @@ public partial class App : Application
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         }
 
+        Settings = AppSettings.Load();
+
         _mic = new MicMuteService();
-        _mic.MuteChanged += (_, muted) => UpdateTrayState(muted);
+        _mic.MuteChanged += (_, muted) => Dispatcher.UIThread.Post(() => UpdateTrayState(muted));
 
         _tray = new MacTrayIcon();
         _tray.OnOptionClick = () => _mic?.Toggle();
@@ -53,9 +59,31 @@ public partial class App : Application
             new TrayMenuItem { Title = "Quit MyMic", Click = QuitApp },
         });
 
+        _hotkey = new GlobalHotkey { Pressed = () => Dispatcher.UIThread.Post(() => _mic?.Toggle()) };
+        ApplyHotkeyFromSettings();
+
         UpdateTrayState(_mic.IsMuted);
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    public void ApplySettings(AppSettings settings)
+    {
+        Settings = settings;
+        Settings.Save();
+        ApplyHotkeyFromSettings();
+    }
+
+    private void ApplyHotkeyFromSettings()
+    {
+        if (_hotkey is null) return;
+        var hk = Settings.ToggleMuteHotkey;
+        if (hk is null)
+        {
+            _hotkey.Unset();
+            return;
+        }
+        _hotkey.TrySet(hk.MacKeyCode, hk.MacModifiers);
     }
 
     private void UpdateTrayState(bool muted)
@@ -69,9 +97,6 @@ public partial class App : Application
 
     private static string? ResolveAsset(string fileName)
     {
-        // In a packaged .app bundle, AppContext.BaseDirectory is Contents/MacOS;
-        // we publish Assets/* alongside via AvaloniaResource, but NSImage needs a
-        // real file path. Locate the PNG next to the executable.
         var candidates = new List<string>
         {
             Path.Combine(AppContext.BaseDirectory, fileName),

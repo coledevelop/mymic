@@ -8,7 +8,7 @@ case "$ARCH" in
   *) echo "unknown arch: $ARCH" >&2; exit 1 ;;
 esac
 
-VERSION="${VERSION:-0.1.0}"
+VERSION="${VERSION:-0.1.1}"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 APP="$ROOT/dist/MyMic.app"
 DMG="$ROOT/dist/MyMic-$VERSION-$ARCH_LABEL.dmg"
